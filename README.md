@@ -26,9 +26,8 @@ playwright install chromium
 
 ## 📖 Usage
 
-### Basic Usage
 ```bash
-python playwright_scraper.py
+python doc_scraper.py
 ```
 
 ### Output Structure
