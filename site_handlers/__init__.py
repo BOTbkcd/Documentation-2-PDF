@@ -1,11 +1,12 @@
 # Site Handlers Module
-# Contains site-specific documentation scraping logic
 
 from .react_native import ReactNativeHandler
+from .nextjs import NextJSHandler
 
 # Registry of available site handlers
 SITE_HANDLERS = {
     'react-native': ReactNativeHandler,
+    'nextjs': NextJSHandler,
 }
 
 def get_handler(site_name):

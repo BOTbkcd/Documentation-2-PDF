@@ -5,8 +5,9 @@ Handles scraping of React Native documentation from reactnative.dev
 
 import asyncio
 from typing import List, Dict, Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from .base_handler import BaseSiteHandler
+import re
 
 
 class ReactNativeHandler(BaseSiteHandler):
@@ -192,3 +193,26 @@ class ReactNativeHandler(BaseSiteHandler):
     def get_merged_pdf_name(self) -> str:
         """Get React Native specific merged PDF name"""
         return "React_Native_Documentation.pdf"
+
+    async def generate_file_entry(self, url: str, title: str, section: str) -> Dict[str, Any]:
+        """Generate a clean filename from URL"""
+        path = urlparse(url).path
+
+        filename = path.replace('/docs/', '').replace('/', '_').strip('_')
+        if not filename:
+            filename = "getting_started"
+        
+        # Clean filename
+        filename = re.sub(r'[^\w\-_.]', '_', filename)
+        filename = re.sub(r'_+', '_', filename)  # Remove multiple underscores
+
+        index = len(self.visited_urls) - 1
+        pdf_filename = f"{index:03d}_{filename}.pdf"
+        
+        return {
+            'title': title or filename.replace('_', ' ').title(),
+            'url': url,
+            'section': section,
+            'pdf_filename': pdf_filename,
+        }
+    

@@ -4,7 +4,7 @@ import asyncio
 import os
 from pathlib import Path
 from playwright.async_api import async_playwright
-from PyPDF2 import PdfMerger
+from PyPDF2 import PdfWriter, PdfReader
 
 from site_handlers import get_handler, list_available_sites
 
@@ -103,7 +103,7 @@ class DocumentationScraper:
             # Add title page
             await self.add_title_page(page, doc, index)
             
-            # Apply site-specific CSS overrides
+            # Apply site-specific CSS overrides with error handling
             if hasattr(self.site_handler, 'get_css_overrides'):
                 css_overrides = self.site_handler.get_css_overrides()
                 await page.add_style_tag(content=css_overrides)
@@ -128,7 +128,7 @@ class DocumentationScraper:
                 footer_template='<div></div>',
             )
             
-            print(f"✓ Saved: {doc['filename']}")
+            print(f"✓ Saved: {doc['title']}")
             return True
             
         except Exception as e:
@@ -388,21 +388,30 @@ class DocumentationScraper:
         print(f"\nMerging {len(self.doc_metadata)} PDF files...")
         
         try:
-            merger = PdfMerger()
-            
-            for doc in self.doc_metadata:
+            writer = PdfWriter()
+            page_number = 0 
+            for index, doc in enumerate(self.doc_metadata):
                 pdf_path = self.individual_pdfs_dir / doc['pdf_filename']
                 if pdf_path.exists():
+                    reader = PdfReader(pdf_path)
+                    writer.append(reader)
+                    
+                    # Add a bookmark pointing to the first page of this file
+                    writer.add_outline_item(
+                        title=f"{index:03d} {doc['title']}",  # bookmark title
+                        page_number=page_number
+                    )
+                    page_number += len(reader.pages)
                     print(f"Adding: {pdf_path.name}")
-                    merger.append(str(pdf_path))
                 else:
                     print(f"Warning: {pdf_path} not found, skipping...")
             
             # Create the merged PDF
             merged_pdf_name = self.site_handler.get_merged_pdf_name()
             merged_pdf_path = self.output_dir / merged_pdf_name
-            merger.write(str(merged_pdf_path))
-            merger.close()
+            # Save the merged PDF
+            with open(merged_pdf_path, "wb") as f:
+                writer.write(f)
             
             print(f"\n✅ Successfully created merged PDF: {merged_pdf_path}")
             print(f"📄 File size: {merged_pdf_path.stat().st_size / (1024*1024):.1f} MB")

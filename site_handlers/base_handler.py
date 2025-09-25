@@ -4,9 +4,7 @@ Defines the interface that all site-specific handlers must implement
 """
 
 from abc import ABC, abstractmethod
-import re
 from typing import List, Dict, Any
-from urllib.parse import urljoin, urlparse
 
 
 class BaseSiteHandler(ABC):
@@ -32,8 +30,7 @@ class BaseSiteHandler(ABC):
             - url: Full URL to the documentation page
             - title: Page title
             - section: Section name the page belongs to
-            - filename: Generated filename for the PDF
-            - path: Path where PDF will be saved
+            - pdf_filename: Generated filename for the PDF
         """
         pass
     
@@ -62,27 +59,19 @@ class BaseSiteHandler(ABC):
         """
         pass
     
-    
+    @abstractmethod
     async def generate_file_entry(self, url: str, title: str, section: str) -> Dict[str, Any]:
-        """Generate a clean filename from URL"""
-        path = urlparse(url).path
-
-        filename = path.replace('/docs/', '').replace('/', '_').strip('_')
-        if not filename:
-            filename = "getting_started"
+        """
+        Generate file entry for an article page
         
-        # Clean filename
-        filename = re.sub(r'[^\w\-_.]', '_', filename)
-        index = len(self.visited_urls) - 1
-        pdf_filename = f"{index:03d}_{filename}.pdf"
-        
-        return {
-            'title': title or filename.replace('_', ' ').title(),
-            'url': url,
-            'section': section,
-            'filename': filename,
-            'pdf_filename': pdf_filename,
-        }
+        Returns:
+            Dictionary contains:
+            - url: Full URL to the documentation page
+            - title: Page title
+            - section: Section name the page belongs to
+            - pdf_filename: Generated filename for the PDF
+        """
+        pass
     
     def get_toc_title(self) -> str:
         """
